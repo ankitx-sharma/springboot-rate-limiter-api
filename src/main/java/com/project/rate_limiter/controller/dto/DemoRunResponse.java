@@ -8,7 +8,7 @@ public record DemoRunResponse (
 	String algorithm,
 	String userId,
 	Map<String, Object> notes,
-	int allowedCount,
-	int blockedCount,
+	int callsThatWereAllowedCount,
+	int callsThatWereBlockedCount,
 	List<DemoEvent> timeline
 ) {}
