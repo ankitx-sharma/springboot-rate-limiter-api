@@ -45,7 +45,7 @@ public class RateLimiterFilter extends OncePerRequestFilter{
 	protected void doFilterInternal(HttpServletRequest request, 
 			HttpServletResponse response, 
 			FilterChain filterChain) throws ServletException, IOException {
-		String algRaw = request.getHeader("X-RateLimit-ALg");
+		String algRaw = request.getHeader("X-RateLimit-Alg");
 		
 		if(algRaw == null || algRaw.isBlank()) {
 			algRaw = request.getParameter("alg");
