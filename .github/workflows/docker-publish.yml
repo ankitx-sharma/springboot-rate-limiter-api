@@ -42,7 +42,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: rate-limiter-service
-          file: rate-limiter-service/Dockerfile
+          file: rate_limiter_service/Dockerfile
           push: true
           tags: ${{ steps.app.outputs.tags }}
           labels: ${{ steps.app.outputs.labels }}
