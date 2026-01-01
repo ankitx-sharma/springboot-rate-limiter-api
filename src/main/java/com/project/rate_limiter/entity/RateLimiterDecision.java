@@ -4,5 +4,5 @@ public record RateLimiterDecision(
 		boolean isAllowed,
 		int remaining,
 		long retryAfterMs,
-		long resetInMs
+		long timeToFullMs
 ) {}
