@@ -1,53 +1,115 @@
-# Rate Limiter Service
-A lightweight, extensible, and production-ready rate limiting system built with Spring Boot.
-This project implements three classic rate-limiting algorithms:
-- Fixed Window
-- Sliding Window
-- Token Bucket
-  
-You can switch between algorithms easily by enabling the corresponding service in the filter.
+# Rate Limiter Service (Spring Boot)
 
-### Features
-- Three fully implemented rate limiter strategies
-- Configurable request limits via application.properties
-- IP-based rate limiting (request.getRemoteAddr())
-- Global filter using OncePerRequestFilter
-- Plug-and-play architecture (swap algorithms instantly)
-- Example endpoint /limiter/api/check
+A lightweight **Rate Limiting microservice** built with **Java & Spring Boot**.  
+It supports multiple classic rate-limiting algorithms and allows **dynamic algorithm selection per request** using HTTP headers.
 
-### Implemented Algorithms
-1. Fixed Window Rate Limiting
-- Divides time into fixed windows (e.g., 1 minute)
-- Tracks how many requests occur in each window
-- Simple but can cause burst issues at window boundaries
+This project is designed as a **reusable, pluggable component** that can be embedded into other backend systems or used as a standalone service.
 
-<ins>Best for:</ins>
-_Basic API throttling, simple enforcement rules._
+---
 
-2. Sliding Window Rate Limiting
-- Stores exact timestamps of requests inside a queue
-- Removes timestamps older than the window
-- More accurate than Fixed Window
+## Table of Contents
+- Features
+- Architecture Overview
+- Supported Algorithms
+- Configuration
+- Quick Start (Local)
+- Docker
+- API Usage
+- Demo Endpoints
+- Extensibility
+- Troubleshooting
+- References
 
-<ins>Best for:</ins>
-_Fairer request distribution without boundary spikes._
+---
 
-3. Token Bucket Rate Limiting
-- Bucket holds tokens up to a maximum capacity
-- Tokens refill every second
+## Features
+- **Three Rate Limiting Algorithms**
+  - Token Bucket (default)
+  - Fixed Window
+  - Sliding Window
+- **Global request filtering** using `OncePerRequestFilter`
+- **Per-request algorithm selection** via `X-RateLimit-Algorithm` header
+- **Flexible key strategy**
+  - Primary: `X-User-Id` header
+  - Fallback: client IP address
+- **Rich rate-limit response headers**
+  - `X-RateLimit-Remaining`
+  - `X-RateLimit-RetryAfter-Ms`
+  - `X-RateLimit-ResetIn-Ms`
+  - Standard `Retry-After` header on HTTP `429`
+- **Swagger / OpenAPI documentation**
+- Docker & Docker Compose support
+- Redis dependency included for future distributed rate-limiting
+
+---
+
+## Architecture Overview
+The service uses a **filter-based architecture**:
+
+### Core Components
+- **RateLimiterFilter**
+  - Intercepts incoming HTTP requests
+  - Determines the rate-limiting key (User ID or IP)
+  - Selects the algorithm based on request headers
+  - Applies rate limiting and blocks requests if necessary
+- **Rate Limiter Services**
+  - `TokenBucketRateLimiterService`
+  - `FixedSizeRateLimiterService`
+  - `SlidingWindowRateLimiterService`
+- **Decision Model**
+  - `RateLimiterDecision` encapsulates:
+    - allow/deny decision
+    - remaining quota
+    - retry/reset timing
+
+> Current implementation is **in-memory per instance**.  
+> For distributed setups, Redis can be used as a shared state store.
+
+---
+
+## Supported Algorithms
+
+### 1. Token Bucket (Default)
+- Allows bursts up to a fixed capacity
+- Tokens refill at a fixed rate per second
 - Each request consumes one token
-- Allows configurable bursts
 
-<ins>Best for:</ins>
-_APIs that need flexibility + burst handling._
+**Best for:** APIs that need smooth traffic handling with bursts.
 
-### Running the Project
-**Requirements**
-- Java 17+
-- Maven 3+
-- Spring Boot 3.x
-**Command**
-```
-mvn spring-boot:run
-```
+---
 
+### 2. Fixed Window
+- Time is divided into fixed windows (e.g. 6 seconds)
+- Requests are counted per window
+
+**Best for:** Simple and fast rate limiting with predictable limits.
+
+---
+
+### 3. Sliding Window
+- Stores timestamps of requests
+- Removes outdated entries dynamically
+- Provides fairer request distribution than fixed windows
+
+**Best for:** Accurate rate limiting under spiky traffic.
+
+---
+
+## Configuration
+All configuration is located in:
+
+`src/main/resources/application.properties`
+
+```properties
+# Max number of requests / tokens
+rate.request.limit.count=5
+
+# Time window in milliseconds (Fixed & Sliding Window)
+rate.request.limit.timeperiod=6000
+
+# Token refill rate per second (Token Bucket)
+rate.request.limit.refill.rate=1
+
+# Swagger configuration
+springdoc.api-docs.path=/v3/api-docs
+springdoc-swagger-ui.path=swagger-ui.html
